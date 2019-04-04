@@ -64,6 +64,8 @@ namespace la {
 
     matrix inverse(matrix const &a);
 
+    matrix E(size_t i);
+
     class tensor {
         std::vector<double> data_;
         size_t amount_of_p_;

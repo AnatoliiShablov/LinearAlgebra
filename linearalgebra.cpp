@@ -277,6 +277,16 @@ namespace la {
         return matrix(a).inverse();
     }
 
+    matrix E(size_t n) {
+        matrix result(n, n);
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
+                result(i, j) = (i == j) ? 1.0 : 0.0;
+            }
+        }
+        return result;
+    }
+
     size_t tensor::binary_pow(size_t const &dim, size_t const &power) {
         if (power == 0) {
             return 1;
@@ -380,7 +390,7 @@ namespace la {
                          T_matrix.height(), T_matrix.length(), dimension_);
             throw std::runtime_error(error);
         }
-        matrix S_matrix = transpose(T_matrix);
+        matrix S_matrix = inverse(T_matrix);
 
         std::vector<size_t> round_real(amount_of_p_ + amount_of_q_, 0);
         std::vector<size_t> round_old(amount_of_p_ + amount_of_q_);
