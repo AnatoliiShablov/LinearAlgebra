@@ -77,7 +77,7 @@ namespace la {
         double sum_el(std::vector<size_t> const &old, std::vector<size_t> const &real,
                       matrix T_matrix, matrix S_matrix);
 
-        bool change_round(std::vector<size_t> &round);
+        bool change_round(std::vector<size_t> &round) const;
 
      public:
         tensor(size_t const &dimension, size_t const &p, size_t const &q) : data_(binary_pow(dimension, (p + q))),
@@ -91,11 +91,25 @@ namespace la {
 
         double &operator()(std::vector<size_t> const &v);
 
+        double const &operator()() const;
+
+        double &operator()();
+
         tensor &contraction(size_t p_num, size_t q_num);
 
-        tensor change_basis(matrix const &T_matrix);
+        tensor &change_basis(matrix const &T_matrix);
+
+        tensor &sym(std::vector<bool> const &v);
+
+        tensor &asym(std::vector<bool> const &v);
     };
 
     tensor contraction(tensor const &a, size_t p_num, size_t q_num);
+
+    tensor change_basis(tensor const &a, matrix const &T_matrix);
+
+    tensor sym(tensor const &a, std::vector<bool> const &v);
+
+    tensor asym(tensor const &a, std::vector<bool> const &v);
 }
 #endif

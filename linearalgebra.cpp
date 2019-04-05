@@ -310,7 +310,7 @@ namespace la {
         return res;
     }
 
-    bool tensor::change_round(std::vector<size_t> &round) {
+    bool tensor::change_round(std::vector<size_t> &round) const {
         size_t i = 0;
         while ((i != round.size()) && (round[i] + 1 == dimension_)) {
             round[i++] = 0;
@@ -320,6 +320,38 @@ namespace la {
             return true;
         }
         return false;
+    }
+
+    bool next_permutation_mn(std::vector<size_t> &permutation, double &mn) {
+        size_t i = permutation.size() - 1;
+        while (i > 0 && permutation[i] < permutation[i - 1]) {
+            i--;
+        }
+
+        if (i == 0) {
+            return false;
+        }
+        size_t pos = i;
+        for (size_t j = i + 1; j < permutation.size(); j++) {
+            if (permutation[j] > permutation[i - 1] && permutation[j] < permutation[pos]) {
+                pos = j;
+            }
+        }
+        std::swap(permutation[pos], permutation[i - 1]);
+        mn *= -1.0;
+
+        bool is_sorted = false;
+        while (!is_sorted) {
+            is_sorted = true;
+            for (size_t j = i + 1; j < permutation.size(); j++) {
+                if (permutation[j] < permutation[j - 1]) {
+                    is_sorted = false;
+                    mn *= -1.0;
+                    std::swap(permutation[j], permutation[j - 1]);
+                }
+            }
+        }
+        return true;
     }
 
     double const &tensor::operator()(std::vector<size_t> const &v) const {
@@ -352,6 +384,17 @@ namespace la {
         return const_cast<double &>(const_cast<const tensor *>(this)->operator()(v));
     }
 
+    double const &tensor::operator()() const {
+        if (amount_of_p_ + amount_of_q_ > 0) {
+            throw std::runtime_error("Use operator (vector) instead of operator () for non-scalar tensor");
+        }
+        return data_.front();
+    }
+
+    double &tensor::operator()() {
+        return const_cast<double &>(const_cast<const tensor *>(this)->operator()());
+    }
+
     tensor &tensor::contraction(size_t p_num, size_t q_num) {
         if (p_num >= amount_of_p_ || q_num >= amount_of_q_) {
             char error[256];
@@ -363,7 +406,6 @@ namespace la {
         tensor result(dimension_, amount_of_p_ - 1, amount_of_q_ - 1);
         std::vector<size_t> round(amount_of_p_ + amount_of_q_ - 2, 0);
         std::vector<size_t> round_real(amount_of_p_ + amount_of_q_);
-        bool no_next = false;
         do {
             for (size_t i = 0, j = 0; i < round_real.size(); i++) {
                 if (i == p_num || i == amount_of_p_ + q_num) continue;
@@ -382,7 +424,7 @@ namespace la {
         return *this;
     }
 
-    tensor tensor::change_basis(matrix const &T_matrix) {
+    tensor &tensor::change_basis(matrix const &T_matrix) {
         if (T_matrix.height() != dimension_ || T_matrix.length() != dimension_) {
             char error[256];
             std::sprintf(error,
@@ -395,8 +437,6 @@ namespace la {
         std::vector<size_t> round_real(amount_of_p_ + amount_of_q_, 0);
         std::vector<size_t> round_old(amount_of_p_ + amount_of_q_);
 
-        bool no_next = false;
-        bool no_next_old;
         size_t i = 0;
         tensor result(dimension_, amount_of_p_, amount_of_q_);
         do {
@@ -406,10 +446,155 @@ namespace la {
                 result(round_real) += sum_el(round_old, round_real, T_matrix, S_matrix);
             }
         } while (change_round(round_real));
-        return result;
+        *this = result;
+        return *this;
+    }
+
+    tensor &tensor::sym(std::vector<bool> const &v) {
+        if (v.empty() && amount_of_p_ + amount_of_q_ == 0) {
+            return *this;
+        }
+        if (v.size() != amount_of_p_ + amount_of_q_) {
+            throw std::runtime_error("Can't get element from bad-size vector");
+        }
+        size_t cnt = 0;
+        for (size_t i = 0; i < v.size(); i++) {
+            if (v[i]) cnt++;
+        }
+        if (cnt < 2) {
+            return *this;
+        }
+
+        tensor tmp(dimension_, amount_of_p_, amount_of_q_);
+        tensor state(dimension_, amount_of_p_, amount_of_q_);
+
+        for (double &i: state.data_) {
+            i = -1;
+        }
+
+        std::vector<size_t> round(amount_of_p_ + amount_of_q_);
+        std::vector<size_t> state_round(amount_of_p_ + amount_of_q_, 0);
+        do {
+            if (state(state_round) > 0) continue;
+            double sum = 0;
+            size_t amount = 0;
+            std::vector<size_t> permutation(cnt);
+            for (size_t i(0), j(0); i < v.size(); i++) {
+                if (!v[i]) continue;
+                permutation[j++] = i;
+            }
+            do {
+                for (size_t i(0), j(0); i < round.size(); i++) {
+                    if (v[i]) {
+                        round[i] = state_round[permutation[j++]];
+                    } else {
+                        round[i] = state_round[i];
+                    }
+                }
+                amount++;
+                sum += operator()(round);
+            } while (std::next_permutation(permutation.begin(), permutation.end()));
+            sum /= amount;
+            for (size_t i(0), j(0); i < v.size(); i++) {
+                if (!v[i]) continue;
+                permutation[j++] = i;
+            }
+            do {
+                for (size_t i(0), j(0); i < round.size(); i++) {
+                    if (v[i]) {
+                        round[i] = state_round[permutation[j++]];
+                    } else {
+                        round[i] = state_round[i];
+                    }
+                }
+                tmp(round) = sum;
+                state(round) = 1;
+            } while (std::next_permutation(permutation.begin(), permutation.end()));
+        } while (change_round(state_round));
+        *this = tmp;
+        return *this;
+    }
+
+    tensor &tensor::asym(std::vector<bool> const &v) {
+        if (v.empty() && amount_of_p_ + amount_of_q_ == 0) {
+            return *this;
+        }
+        if (v.size() != amount_of_p_ + amount_of_q_) {
+            throw std::runtime_error("Can't get element from bad-size vector");
+        }
+        size_t cnt = 0;
+        for (size_t i = 0; i < v.size(); i++) {
+            if (v[i]) cnt++;
+        }
+        if (cnt < 2) {
+            return *this;
+        }
+
+        tensor tmp(dimension_, amount_of_p_, amount_of_q_);
+        tensor state(dimension_, amount_of_p_, amount_of_q_);
+
+        for (double &i: state.data_) {
+            i = -1;
+        }
+
+        std::vector<size_t> round(amount_of_p_ + amount_of_q_);
+        std::vector<size_t> state_round(amount_of_p_ + amount_of_q_, 0);
+        do {
+            if (state(state_round) > 0) continue;
+            double mn = 1.0;
+            double sum = 0;
+            size_t amount = 0;
+            std::vector<size_t> permutation(cnt);
+            for (size_t i(0), j(0); i < v.size(); i++) {
+                if (!v[i]) continue;
+                permutation[j++] = i;
+            }
+            do {
+                for (size_t i(0), j(0); i < round.size(); i++) {
+                    if (v[i]) {
+                        round[i] = state_round[permutation[j++]];
+                    } else {
+                        round[i] = state_round[i];
+                    }
+                }
+                amount++;
+                sum += mn * operator()(round);
+            } while (next_permutation_mn(permutation, mn));
+            sum /= amount;
+            for (size_t i(0), j(0); i < v.size(); i++) {
+                if (!v[i]) continue;
+                permutation[j++] = i;
+            }
+            mn = 1.0;
+            do {
+                for (size_t i(0), j(0); i < round.size(); i++) {
+                    if (v[i]) {
+                        round[i] = state_round[permutation[j++]];
+                    } else {
+                        round[i] = state_round[i];
+                    }
+                }
+                tmp(round) = sum * mn;
+                state(round) = 1;
+            } while (next_permutation_mn(permutation, mn));
+        } while (change_round(state_round));
+        *this = tmp;
+        return *this;
     }
 
     tensor contraction(tensor const &a, size_t p_num, size_t q_num) {
         return tensor(a).contraction(p_num, q_num);
+    }
+
+    tensor change_basis(tensor const &a, matrix const &T_matrix) {
+        return tensor(a).change_basis(T_matrix);
+    }
+
+    tensor sym(tensor const &a, std::vector<bool> const &v) {
+        return tensor(a).sym(v);
+    }
+
+    tensor asym(tensor const &a, std::vector<bool> const &v) {
+        return tensor(a).sym(v);
     }
 }
