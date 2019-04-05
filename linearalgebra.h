@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <type_traits>
+#include <iostream>
 
 namespace la {
     class matrix {
@@ -18,6 +19,8 @@ namespace la {
                                                             amount_of_columns_(columns) {}
 
         matrix(matrix const &rhs) = default;
+
+        matrix() = default;
 
         double const &operator()(size_t const &row, size_t const &column) const;
 
@@ -58,6 +61,10 @@ namespace la {
         size_t height() const;
 
         size_t length() const;
+
+        friend std::ostream &operator<<(std::ostream &cout, matrix const &a);
+
+        friend std::istream &operator>>(std::istream &cin, matrix &a);
     };
 
     matrix transpose(matrix const &a);
@@ -87,6 +94,8 @@ namespace la {
 
         tensor(tensor const &rhs) = default;
 
+        tensor() = default;
+
         double const &operator()(std::vector<size_t> const &v) const;
 
         double &operator()(std::vector<size_t> const &v);
@@ -102,6 +111,10 @@ namespace la {
         tensor &sym(std::vector<bool> const &v);
 
         tensor &asym(std::vector<bool> const &v);
+
+        friend std::ostream &operator<<(std::ostream &cout, tensor const &a);
+
+        friend std::istream &operator>>(std::istream &cin, tensor &a);
     };
 
     tensor contraction(tensor const &a, size_t p_num, size_t q_num);

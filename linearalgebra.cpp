@@ -269,6 +269,28 @@ namespace la {
         return amount_of_columns_;
     }
 
+    std::ostream &operator<<(std::ostream &cout, matrix const &a) {
+        for (size_t i = 0; i < a.amount_of_columns_; i++) {
+            for (size_t j = 0; j < a.amount_of_rows_; j++) {
+                cout << a(i, j) << ' ';
+            }
+            cout << '\n';
+        }
+        return cout;
+    }
+
+    std::istream &operator>>(std::istream &cin, matrix &a) {
+        size_t h, l;
+        cin >> h >> l;
+        a = matrix(h, l);
+        for (size_t i = 0; i < h; i++) {
+            for (size_t j = 0; j < l; j++) {
+                cin >> a(i, j);
+            }
+        }
+        return cin;
+    }
+
     matrix transpose(matrix const &a) {
         return matrix(a).transpose();
     }
@@ -312,11 +334,14 @@ namespace la {
 
     bool tensor::change_round(std::vector<size_t> &round) const {
         size_t i = 0;
-        while ((i != round.size()) && (round[i] + 1 == dimension_)) {
-            round[i++] = 0;
+        size_t real_i = (round.size() > 1) ? 1 : 0;
+        while ((i != round.size()) && (round[real_i] + 1 == dimension_)) {
+            round[real_i] = 0;
+            i++;
+            real_i = (round.size() % 2 == 0 || round.size() - 1 != i) ? i ^ 1 : i;
         }
         if (i < round.size()) {
-            round[i]++;
+            round[real_i]++;
             return true;
         }
         return false;
@@ -580,6 +605,54 @@ namespace la {
         } while (change_round(state_round));
         *this = tmp;
         return *this;
+    }
+
+    std::ostream &operator<<(std::ostream &cout, tensor const &a) {
+        if (a.amount_of_p_ + a.amount_of_q_ == 0) {
+            cout << a();
+            return cout;
+        }
+        std::vector<size_t> v(a.amount_of_p_ + a.amount_of_q_, 0);
+        std::vector<size_t> prev(a.amount_of_p_ + a.amount_of_q_, 0);
+        bool first = true;
+        do {
+
+            size_t max = 0;
+            for (size_t i = 0; i < v.size(); i++) {
+                if (v[i] != prev[i]) {
+                    max = std::max(max, (v.size() % 2 == 0 || v.size() - 1 != i) ? i ^ 1 : i);
+                }
+            }
+            if (first) {
+                first = false;
+            } else if (max == 0) {
+                cout << ' ';
+            } else if (max == 1) {
+                cout << '\n';
+            } else {
+                cout << '\n';
+                for (size_t j = 0; j < max - 1; j++)
+                    cout << "_____________\n";
+            }
+            cout << a(v);
+            prev = v;
+        } while (a.change_round(v));
+        return cout;
+    }
+
+    std::istream &operator>>(std::istream &cin, tensor &a) {
+        size_t d, p, q;
+        cin >> d >> p >> q;
+        a = tensor(d, p, q);
+        if (p + q == 0) {
+            cin >> a();
+            return cin;
+        }
+        std::vector<size_t> v(p + q, 0);
+        do {
+            cin >> a(v);
+        } while (a.change_round(v));
+        return cin;
     }
 
     tensor contraction(tensor const &a, size_t p_num, size_t q_num) {
