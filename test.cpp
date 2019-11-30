@@ -1,7 +1,6 @@
 #include "linearalgebra.h"
 
 int main() {
-
     la::tensor a;
 
     std::cin >> a;
@@ -10,5 +9,3 @@ int main() {
     a.sym({true, false, true});
     std::cout << a;
 }
-
-

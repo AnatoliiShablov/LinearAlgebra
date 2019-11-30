@@ -1,128 +1,125 @@
 #ifndef LINEARALGEBRA_LIBRARY_H
 #define LINEARALGEBRA_LIBRARY_H
 
-#include <vector>
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 #include <stdexcept>
 #include <type_traits>
-#include <iostream>
+#include <vector>
 
 namespace la {
-    class matrix {
-        std::vector<double> data_;
-        size_t amount_of_rows_;
-        size_t amount_of_columns_;
-     public:
-        matrix(size_t const &rows, size_t const &columns) : data_(rows * columns),
-                                                            amount_of_rows_(rows),
-                                                            amount_of_columns_(columns) {}
+class matrix {
+    std::vector<double> data_;
+    size_t amount_of_rows_;
+    size_t amount_of_columns_;
 
-        matrix(matrix const &rhs) = default;
+public:
+    matrix(size_t const &rows, size_t const &columns)
+        : data_(rows * columns), amount_of_rows_(rows), amount_of_columns_(columns) {}
 
-        matrix() = default;
+    matrix(matrix const &rhs) = default;
 
-        double const &operator()(size_t const &row, size_t const &column) const;
+    matrix() = default;
 
-        double &operator()(size_t const &row, size_t const &column);
+    double const &operator()(size_t const &row, size_t const &column) const;
 
-        matrix &operator+=(matrix const &rhs);
+    double &operator()(size_t const &row, size_t const &column);
 
-        friend matrix operator+(matrix const &lhs, matrix const &rhs);
+    matrix &operator+=(matrix const &rhs);
 
-        matrix &operator-=(matrix const &rhs);
+    friend matrix operator+(matrix const &lhs, matrix const &rhs);
 
-        friend matrix operator-(matrix const &lhs, matrix const &rhs);
+    matrix &operator-=(matrix const &rhs);
 
-        matrix &operator/=(double const &rhs);
+    friend matrix operator-(matrix const &lhs, matrix const &rhs);
 
-        friend matrix operator/(matrix const &lhs, double const &rhs);
+    matrix &operator/=(double const &rhs);
 
-        matrix &operator*=(double const &rhs);
+    friend matrix operator/(matrix const &lhs, double const &rhs);
 
-        friend matrix operator*(matrix const &lhs, double const &rhs);
+    matrix &operator*=(double const &rhs);
 
-        friend matrix operator*(double const &lhs, matrix const &rhs);
+    friend matrix operator*(matrix const &lhs, double const &rhs);
 
-        matrix &operator*=(matrix const &rhs);
+    friend matrix operator*(double const &lhs, matrix const &rhs);
 
-        friend matrix operator*(matrix const &lhs, matrix &rhs);
+    matrix &operator*=(matrix const &rhs);
 
-        friend bool operator==(matrix const &lhs, matrix const &rhs);
+    friend matrix operator*(matrix const &lhs, matrix &rhs);
 
-        friend bool operator!=(matrix const &lhs, matrix const &rhs);
+    friend bool operator==(matrix const &lhs, matrix const &rhs);
 
-        double determinant() const;
+    friend bool operator!=(matrix const &lhs, matrix const &rhs);
 
-        matrix &transpose();
+    double determinant() const;
 
-        matrix &inverse();
+    matrix &transpose();
 
-        size_t height() const;
+    matrix &inverse();
 
-        size_t length() const;
+    size_t height() const;
 
-        friend std::ostream &operator<<(std::ostream &cout, matrix const &a);
+    size_t length() const;
 
-        friend std::istream &operator>>(std::istream &cin, matrix &a);
-    };
+    friend std::ostream &operator<<(std::ostream &cout, matrix const &a);
 
-    matrix transpose(matrix const &a);
+    friend std::istream &operator>>(std::istream &cin, matrix &a);
+};
 
-    matrix inverse(matrix const &a);
+matrix transpose(matrix const &a);
 
-    matrix E(size_t i);
+matrix inverse(matrix const &a);
 
-    class tensor {
-        std::vector<double> data_;
-        size_t amount_of_p_;
-        size_t amount_of_q_;
-        size_t dimension_;
+matrix E(size_t i);
 
-        size_t binary_pow(size_t const &dim, size_t const &power);
+class tensor {
+    std::vector<double> data_;
+    size_t amount_of_p_;
+    size_t amount_of_q_;
+    size_t dimension_;
 
-        double sum_el(std::vector<size_t> const &old, std::vector<size_t> const &real,
-                      matrix T_matrix, matrix S_matrix);
+    size_t binary_pow(size_t const &dim, size_t const &power);
 
-        bool change_round(std::vector<size_t> &round) const;
+    double sum_el(std::vector<size_t> const &old, std::vector<size_t> const &real, matrix T_matrix, matrix S_matrix);
 
-     public:
-        tensor(size_t const &dimension, size_t const &p, size_t const &q) : data_(binary_pow(dimension, (p + q))),
-                                                                            amount_of_p_(p),
-                                                                            amount_of_q_(q),
-                                                                            dimension_(dimension) {}
+    bool change_round(std::vector<size_t> &round) const;
 
-        tensor(tensor const &rhs) = default;
+public:
+    tensor(size_t const &dimension, size_t const &p, size_t const &q)
+        : data_(binary_pow(dimension, (p + q))), amount_of_p_(p), amount_of_q_(q), dimension_(dimension) {}
 
-        tensor() = default;
+    tensor(tensor const &rhs) = default;
 
-        double const &operator()(std::vector<size_t> const &v) const;
+    tensor() = default;
 
-        double &operator()(std::vector<size_t> const &v);
+    double const &operator()(std::vector<size_t> const &v) const;
 
-        double const &operator()() const;
+    double &operator()(std::vector<size_t> const &v);
 
-        double &operator()();
+    double const &operator()() const;
 
-        tensor &contraction(size_t p_num, size_t q_num);
+    double &operator()();
 
-        tensor &change_basis(matrix const &T_matrix);
+    tensor &contraction(size_t p_num, size_t q_num);
 
-        tensor &sym(std::vector<bool> const &v);
+    tensor &change_basis(matrix const &T_matrix);
 
-        tensor &asym(std::vector<bool> const &v);
+    tensor &sym(std::vector<bool> const &v);
 
-        friend std::ostream &operator<<(std::ostream &cout, tensor const &a);
+    tensor &asym(std::vector<bool> const &v);
 
-        friend std::istream &operator>>(std::istream &cin, tensor &a);
-    };
+    friend std::ostream &operator<<(std::ostream &cout, tensor const &a);
 
-    tensor contraction(tensor const &a, size_t p_num, size_t q_num);
+    friend std::istream &operator>>(std::istream &cin, tensor &a);
+};
 
-    tensor change_basis(tensor const &a, matrix const &T_matrix);
+tensor contraction(tensor const &a, size_t p_num, size_t q_num);
 
-    tensor sym(tensor const &a, std::vector<bool> const &v);
+tensor change_basis(tensor const &a, matrix const &T_matrix);
 
-    tensor asym(tensor const &a, std::vector<bool> const &v);
-}
+tensor sym(tensor const &a, std::vector<bool> const &v);
+
+tensor asym(tensor const &a, std::vector<bool> const &v);
+}  // namespace la
 #endif
