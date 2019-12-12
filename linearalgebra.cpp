@@ -207,7 +207,7 @@ matrix &matrix::inverse() {
                 break;
         }
         if (change == amount_of_rows_) {
-            throw std::runtime_error("Can't inverse matrix matrix with determinant = 0");
+            throw std::runtime_error("Can't inverse matrix with determinant = 0");
         }
 
         if (change != i) {
